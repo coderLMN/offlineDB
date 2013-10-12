@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <title>Offline DB demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <!--angularjs bootstrap library-->
+    <link rel="stylesheet" href="./stylesheets/bootstrap-combined.min.css">
+    <!--customized css-->
+    <link rel="stylesheet" href="./stylesheets/style.css">
+    <!--angularjs library-->
+    <script src="javascripts/angular-1.1.5.min.js"></script>
+    <!--angularjs bootstrap js library-->
+    <script src="javascripts/bootstrap-ui-tpls-0.6.0.js"></script>
+    <!--main app-->
+    <script src="javascripts/app.js"></script>
+    <!--indexedDB access services-->
+    <script src="javascripts/indexDBService.js"></script>
+    <!--instant search filters-->
+    <script src="javascripts/searchFilters.js"></script>
+</head>
+
+<body ng-csp ng-controller="AppCtrl">
+    <!--top menu-->
+    <div class="navbar navbar-fixed-top">
+        <header>
+            <h1 class="title">
+                {{flags.title}}
+                <span class="particle particle--c" ng-show="flags.isViewLoading"></span>
+                <span class="particle particle--a" ng-show="flags.isViewLoading"></span>
+                <span class="particle particle--b" ng-show="flags.isViewLoading"></span>
+            </h1>
+        </header>
+        <!--message bar-->
+        <div ng-show="message.type" class="alert {{message.type}} text-center" type="success">
+            <button class="pull-right btn btn-primary btn-mini" ng-click="closeMessage()"><i class="icon-remove icon-white"></i></button>
+            <span>{{message.text}}</span>
+        </div>
+    </div>
+    <!--bootstrap carousel effect -->
+    <div class="row-fluid" id="top">
+        <div class=" well">
+            <carousel interval="5000">
+                <slide ng-repeat="slide in slides "  active="slide.active">
+                    <img ng-src="./photos/{{slide.imageAll[0]}}"  style="margin:auto;" class="img-polaroid img-carousel" ng-click="openSlide({{slide}})">
+                    <div class="carousel-caption" >
+                        <h4>{{slide.name}} :</h4>
+                        <p class="lead"> &nbsp;&nbsp;{{slide.text.substring(0,80)}}
+                            <strong ng-show="{{slide.text.length >80}}"> ...</strong>
+                        </p>
+                    </div>
+                </slide>
+            </carousel>
+        </div>
+    </div>
+
+    <!--data records list and search criteria-->
+    <div class="row-fluid">
+        <div class="offset1 span10">
+            <div class="form-horizontal row-fluid alert-info">
+                <p class="text-info">&nbsp;&nbsp;&nbsp;<i class="icon-search"></i>&nbsp;Query (Matches: {{ filtered.length }} items）
+                    <button class="btn btn-success pull-right" ng-click="addSlide()">
+                        <i class="icon-plus icon-white"></i> Add
+                    </button>
+                </p>
+                <!--show search criteria only when there is at least one slide-->
+                <h3  ng-show="slides.length"><small>
+                    <span class="span6">
+                        &nbsp;&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;Date : 
+                        <input type="text" class="input-medium" datepicker-popup="yyyy-MM-dd" ng-model="date.start" is-open="isOpenStart"  ng-required="false" ng-click="datePickStart()" placeholder="From Date"/>
+                        -
+                        <input type="text" class="input-medium" datepicker-popup="yyyy-MM-dd" ng-model="date.end" is-open="isOpenEnd"  ng-required="false" ng-click="datePickEnd()" placeholder="To Date"/>
+                     </span>
+                    <span class="span6">
+                        <i class="icon-gift"></i>&nbsp;Price : $
+                        <input class="input-medium" type="number" ng-model="cost.startPrice">
+                        -
+                        <input class="input-medium" type="number" ng-model="cost.endPrice">
+                    </span>
+                </small></h3>
+
+            </div>
+            <!--paginated data table, with text search items and sort event handler in its head-->
+            <table class="table table-condensed table-striped table-bordered jumbotron">
+                <thead>
+                <tr  class="navbar">
+                    <th><h5>Name<input type="search" ng-model="name" placeholder="Search" class="pull-right input-small" ></h5></th>
+                    <th class="text-center"><h5>Photo</h5></th>
+                    <th><h5>Location <input type="search" ng-model="location" placeholder="Search" class="pull-right input-small" > </h5></th>
+                    <th><h5>Description <input type="search" ng-model="term" placeholder="Search" class="pull-right input-small" > </h5></th>
+                    <th ng-click="sort('date');" class="pointer"><h5><i class="icon-chevron-down icon-white"></i> Date</h5></th>
+                    <th ng-click="sort('price');" class="pointer"><h5 class="pull-right"><i class="icon-chevron-down icon-white"></i> Price( $ )</h5></th>
+                    <th class=" label-warning pointer" ng-click="toggleRemove()"><h5 class="pull-right">Remove</h5></th>
+                </tr>
+                </thead>
+                <tbody>
+                <!--a chain of filters are deployed here to enable a combined search-->
+                <tr ng-repeat="slide in filtered = ( slides | filter: {text: term, name: name, location:location} | period: this.date | cost: this.cost )| startFrom:(currentPage-1)*20 | limitTo:20 "
+                    ng-animate="'animate'"
+                    ng-class-odd="''" ng-class-even="''">
+                    <td>
+                        <!--highlight all the text matches the value of input: name-->
+                        <h4 ng-bind-html-unsafe="'{{slide.name}}' | highlight:name "></h4>
+                    </td>
+                    <td class="img">
+                        <img ng-src="./photos/{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{slide}})">
+                    </td>
+                    <td>
+                        <p class="lead" ng-bind-html-unsafe="'{{slide.location}}' | highlight:location "></p>
+                    </td>
+                    <td class="text">
+                        <p class="lead" ng-bind-html-unsafe="'{{slide.text}}' | highlight:term "></p>
+                    </td>
+                    <td>
+                        <p class="lead">
+                            {{slide.date}}
+                        </p>
+                    </td>
+                    <td>
+                        <!--round floats to integers-->
+                        <p class="lead pull-right">
+                            {{slide.price |number:0}}
+                        </p>
+                    </td>
+                    <td>
+                        <!--remove icons are hidden by default-->
+                        <p class="lead pointer pull-right">
+                            <i class="icon-trash" ng-show="flags.showRemoveIcon" ng-click="removeSlide({{slide}})"></i>
+                        </p>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot class="navbar">
+                <!--pagination with angularjs bootstrap lib-->
+                <tr>
+                    <td colspan="7">
+                        <pagination total-items="filtered.length" page="currentPage" items-per-page="pageSize" max-size="maxSize"  class="pagination pull-right" boundary-links="true" rotate="false" num-pages="numPages"></pagination>
+                </tr>
+                </tfoot>
+            </table>
+            <!--return to top-->
+            <span ng-click="toTop()" class="pull-right btn-link"> <i class="icon-arrow-up"></i> Back to top</span>
+        </div>
+    </div>
+    <!--template for create a new slide-->
+    <script type="text/ng-template" id="newSlide.html">
+        <div class="text-center modal-header">
+            <h1><small>
+                <div class="row-fluid">
+                    <span>Add A Slide</span>
+                    <button class="pull-right btn btn-primary"  ng-click="cancel()"><i class="icon-remove icon-white"></i></button>
+                </div>
+            </small></h1>
+        </div>
+        <div class="modal-body well">
+            <br>
+            <div class="row-fluid">
+                <div class="span4 offset1">
+                    Date :  <input type="text" ng-model="newSlide.date" datepicker-popup="yyyy-MM-dd" is-open="newDateOpen"  ng-required="true" ng-click="newDatePick()" placeholder="Date"/><br>
+                    Name :  <input type="text" ng-model="newSlide.name" placeholder="Name" ng-required="true"/>  <br>
+                    Photo :  <input type="file" accept="image/*" onchange="angular.element(this).scope().selectFile(this)" />
+                    <br><label class="label label-info text-center" ng-show="newSlide.imageAll.length">Selected <br>(Totally {{ newSlide.imageAll.length }} ): {{fileSelected}} </label>
+                    <span ng-repeat="img in newSlide.imageAll" ng-show="newSlide.imageAll">
+                         <img ng-src="./photos/{{img}}" width="60" class="img-rounded img-list" alt="{{img}}" title="{{img}}">
+                    </span> <br>
+                </div>
+                <div class="span5 offset1">
+                    Price( $ ):  <input type="number" ng-model="newSlide.price" placeholder="Price ( $ )" ng-required="true"/><br>
+                    Location :  <input type="text" ng-model="newSlide.location" placeholder="Location" ng-required="true"/>  <br>
+                    <div ng-show="duplicateImg" class="alert alert-error text-center" type="error">
+                        <button class="pull-right btn btn-primary btn-mini" ng-click="clearError()"><i class="icon-remove icon-white"></i></button>
+                        <span>Duplicated Photo : It has been selected.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row-fluid">
+                <div class="span10 offset1">
+                    Description :  <textarea ng-model="newSlide.text" placeholder="Description" ng-required="true"></textarea> <br>
+                    <button class="btn disabled" disabled ng-hide="newSlide.date && newSlide.name && newSlide.price &&newSlide.location && newSlide.imageAll  && newSlide.text">Save</button>
+                    <button class="btn btn-primary" ng-show="newSlide.date && newSlide.name && newSlide.price && newSlide.imageAll &&newSlide.location && newSlide.text" ng-click="ok()">Save</button>
+
+                </div>
+            </div>
+            <hr>
+        </div>
+        <div class="row-fluid">
+            <h3><small>
+                <div class="span1 offset1">
+                    Tips : 
+                </div>
+                <div class="span9 alert">
+                    ①All the data items are mandatory. <br><br>②Please copy all the necessary photo files to photos directory or some directory inside it. 
+                    <br><br>③Pick one photo each time. <br><br>④Duplicate photo files will not be accepted.<br>
+                </div>
+            </small></h3>
+        </div>
+    </script>
+    <!--template for show a existing slide-->
+    <script type="text/ng-template" id="showSlide.html">
+        <div class="modal-header">
+            <h1><small class="text-center">
+                <div class="row-fluid">
+                    <span class="span3">{{record.date}}</span>
+                    <span class="span4">{{record.name}} : {{record.location}}</span>
+                    <span class="span4">￥ {{record.price}}</span>
+                    <button class="pull-right btn btn-primary" ng-click="exit()"><i class="icon-remove icon-white"></i></button>
+                </div>
+            </small></h1>
+        </div>
+        <div class="modal-body">
+            <carousel interval="5000">
+                <slide ng-repeat="img in record.imageAll "  active="slide.active">
+                    <img ng-src="./photos/{{img}}"  style="margin:auto;"  class="img-polaroid img-carousel-big">
+                    <div class="carousel-caption" >
+                        <h4>{{img}}</h4>
+                    </div>
+                </slide>
+            </carousel>
+
+        </div>
+        <div class="modal-footer">
+            <p class="lead">&nbsp;&nbsp;&nbsp;&nbsp;{{record.text}}</p>
+        </div>
+    </script>
+    <!--information-->
+    <footer class="alert alert-warning" id="bottom">
+        <div class="row">
+            <div class="offset1 span5">
+                <h4>
+                    <small>
+                        This is a demo AngularJS App written by coderLMN. (Oct. 2013)<br>
+                    </small>
+                </h4>
+            </div>
+            <div class="offset1 span5">
+                <h4>
+                    <small>
+                        <button ng-click="clearDB()" ng-show="slides.length" ng-hide="flags.isViewLoading"class="btn btn-danger pull-right" ><i class="icon-remove-sign icon-white"></i> Clear Data</button>
+                    </small>
+                </h4>
+            </div>
+        </div>
+    </footer>
+    <!--play music with html5 audio tag-->
+    <audio autoplay loop>
+        <source src="./music/mozart.mp3" type="audio/mp3">
+    </audio>
+</body>
+</html>
