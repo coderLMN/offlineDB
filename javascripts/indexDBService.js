@@ -1,5 +1,5 @@
 app.service('indexDBService', function() {
-    var db = null;
+    this.db = null;
 
     window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
     if ('webkitIndexedDB' in window) {
