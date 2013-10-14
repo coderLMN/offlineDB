@@ -208,7 +208,7 @@ app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide) {
 app.controller('NewSlideModalCtrl', function($scope, $modalInstance) {
     $scope.newSlide = {};
     $scope.newSlide.date = new Date();
-    $scope.newSlide.image = '';
+    var imageStr = '\n';           // use \n instead of blank to split image files to contain file names with blanks inside
 
     $scope.ok = function() {
         $modalInstance.close($scope.newSlide);          // confirmed save, return the newSlide to the caller in AppCtrl
@@ -219,13 +219,12 @@ app.controller('NewSlideModalCtrl', function($scope, $modalInstance) {
 
     $scope.selectFile = function(element) {    //select image files within the photos directory
         var filename = element.files[0].name;
-        if(0 <= $scope.newSlide.image.indexOf(' '+ filename)) {  //check if image file already selected
+        if(0 <= imageStr.indexOf('\n' + filename +'\n')) {  //check if image file already selected
             $scope.duplicateImg = true;
         }
         else{
-            $scope.newSlide.image += ' ';
-            $scope.newSlide.image += filename;  // newSlide.image is only for duplication check purpose
-            $scope.newSlide.imageAll = $scope.newSlide.image.trim().split(' ');   // this is the one to persist
+            imageStr += filename + '\n'; // newSlide.image is only for duplication check purpose
+            $scope.newSlide.imageAll = imageStr.replace(/^\n+|\n+$/g, '').split('\n');   // this is the one to persist
         }
         $scope.$apply();
     };
@@ -233,4 +232,16 @@ app.controller('NewSlideModalCtrl', function($scope, $modalInstance) {
     $scope.clearError = function(){
         $scope.duplicateImg = false;       // hide the duplicate image error note
     };
+    $scope.cancelImg = function(img){      // remove the img from imageAll list
+        var start = imageStr.indexOf('\n' + img + '\n');
+        if(start > -1){
+            imageStr = imageStr.substring(0,start) + imageStr.substring(start+img.length+1);   //remove img from the string
+            if(imageStr.length > 1){
+                $scope.newSlide.imageAll = imageStr.replace(/^\n+|\n+$/g, '').split('\n');
+            }
+            else{
+                $scope.newSlide.imageAll = [];
+            }
+        }
+    }
 });
