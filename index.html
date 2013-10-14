@@ -84,7 +84,7 @@
             <table class="table table-condensed table-striped table-bordered jumbotron">
                 <thead>
                 <tr  class="navbar">
-                    <th><h5>Name<input type="search" ng-model="name" placeholder="Search" class="pull-right input-small" ></h5></th>
+                    <th><h5><i class="icon-edit icon-white"></i> Name<input type="search" ng-model="name" placeholder="Search" class="pull-right input-small" ></h5></th>
                     <th class="text-center"><h5>Photo</h5></th>
                     <th><h5>Location <input type="search" ng-model="location" placeholder="Search" class="pull-right input-small" > </h5></th>
                     <th><h5>Description <input type="search" ng-model="term" placeholder="Search" class="pull-right input-small" > </h5></th>
@@ -98,11 +98,11 @@
                 <tr ng-repeat="slide in filtered = ( slides | filter: {text: term, name: name, location:location} | period: this.date | cost: this.cost )| startFrom:(currentPage-1)*20 | limitTo:20 "
                     ng-animate="'animate'"
                     ng-class-odd="''" ng-class-even="''">
-                    <td>
+                    <td ng-dblclick="addSlide({{slide}})" class="pointer" title="Double Click to edit the record.">
                         <!--highlight all the text matches the value of input: name-->
                         <h4 ng-bind-html-unsafe="'{{slide.name}}' | highlight:name "></h4>
                     </td>
-                    <td class="img">
+                    <td class="img pointer">
                         <img  ng-src="./photos/{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{slide}})">
                     </td>
                     <td>
@@ -125,7 +125,7 @@
                     <td>
                         <!--remove icons are hidden by default-->
                         <p class="lead pointer pull-right">
-                            <i class="icon-trash" ng-show="flags.showRemoveIcon" ng-click="removeSlide({{slide}})"></i>
+                            <i class="icon-trash  pointer" ng-show="flags.showRemoveIcon" ng-click="removeSlide({{slide}})"></i>
                         </p>
                     </td>
                 </tr>

@@ -16,6 +16,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         $scope.cost.endPrice = 0;
         $scope.date.start = new Date();     //assign current date to initial start date, which is subject to further adjustment in init()
         $scope.date.end = new Date();
+        $scope.currentPage =  1;            //set default page as the first page
     };
 
     $scope.init = function() {
@@ -41,6 +42,9 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 }
             },
             function(){
+                $scope.slides.sort(function(a, b) {
+                    return ((a.timeStamp > b.timeStamp) ? -1 : ((a.timeStamp < b.timeStamp) ? 1 : 0));
+                });                                         // sort by the time added by default
                 $scope.flags.title = 'Offline DB demo';
                 $scope.flags.isViewLoading = false;
                 $scope.currentPage = 1;
@@ -116,13 +120,12 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
     };
 
     $scope.openSlide = function (slide) {
-        $scope.record = slide;
         var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
             templateUrl: 'showSlide.html',
             controller: "ShowSlideModalCtrl",
             resolve: {
-                slide: function () {
-                    return $scope.record;
+                slide: function() {
+                    return slide;
                 }
             }
         });
@@ -136,29 +139,44 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
     }
-
-    $scope.addSlide = function() {
+    //Now this method handles not only editing and saving new slide, but also modifying existing slide
+    $scope.addSlide = function(slide) {
         var modalInstance = $modal.open({
             templateUrl: 'newSlide.html',
-            controller: "NewSlideModalCtrl"
+            controller: "NewSlideModalCtrl",
+            resolve: {
+                slide: function () {
+                    return slide;
+                }
+            }
         });
         modalInstance.result.then(function(record) {      //record is returned object from NewSlideModalCtrl
-            var day = parseInt(record.date.getDate());
-            var month = parseInt(record.date.getMonth() + 1); //Months are zero based
-            var year = parseInt(record.date.getFullYear());
+            var newDate = '';
+            if(angular.isDate(record.date)){
+                var day = parseInt(record.date.getDate());
+                var month = parseInt(record.date.getMonth() + 1); //Months are zero based
+                var year = parseInt(record.date.getFullYear());
 
-            var newDate = ''+ year + '-';
-            if(month < 10) {
-                newDate += '0' +  month + '-';
+                newDate += year + '-';
+                if(month < 10) {
+                    newDate += '0' +  month + '-';
+                }
+                else{
+                    newDate += '' + month + '-';
+                }
+                if(day < 10) {
+                    newDate += '0' +  day;
+                }
+                else{
+                    newDate += '' + day;
+                }
             }
             else{
-                newDate += '' + month + '-';
+                newDate = record.date;                      //if date is not modified
             }
-            if(day < 10) {
-                newDate += '0' +  day;
-            }
-            else{
-                newDate += '' + day;
+            var timeStamp = new Date().getTime();
+            if(record.timeStamp){
+                timeStamp = record.timeStamp;
             }
             var slide = {
                 "name" :  encode(record.name),         //encode text fields to protect DB from malicious input
@@ -167,7 +185,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 "imageAll": record.imageAll,
                 "date": newDate,
                 "price": ''+record.price,
-                "timeStamp" : new Date().getTime()
+                "timeStamp" : timeStamp
             };                                              //create a slide object
             indexDBService.addRecord(slide, function(){     //save the slide
                 $scope.init();
@@ -214,11 +232,17 @@ app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide) {
 });
 
 // open a modal box to add a new slide record
-app.controller('NewSlideModalCtrl', function($scope, $modalInstance) {
-    $scope.newSlide = {};
-    $scope.newSlide.date = new Date();
+app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide) {
     var imageStr = '\n';           // use \n instead of blank to split image files to contain file names with blanks inside
-
+    if(slide){
+        $scope.newSlide = slide;
+        $scope.newSlide.price = parseInt(slide.price);
+        imageStr = '\n' + slide.imageAll.join('\n') + '\n';
+    }
+    else{
+        $scope.newSlide = {};
+        $scope.newSlide.date = new Date();
+    }
     $scope.ok = function() {
         $modalInstance.close($scope.newSlide);          // confirmed save, return the newSlide to the caller in AppCtrl
     };
