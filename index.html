@@ -42,7 +42,6 @@
         <div class=" well">
             <carousel interval="5000">
                 <slide ng-repeat="slide in slides "  active="slide.active">
-                    <img ng-src="./photos/{{slide.imageAll[0]}}"  style="margin:auto;" class="img-polaroid img-carousel" ng-click="openSlide({{slide}})">
                     <img  ng-src="./photos/{{slide.imageAll[0]}}"  style="margin:auto;" class="img-polaroid img-carousel" ng-click="openSlide({{slide}})">
                     <div class="carousel-caption" >
                         <h4>{{slide.name}} :</h4>
@@ -67,7 +66,7 @@
                 <!--show search criteria only when there is at least one slide-->
                 <h3  ng-show="slides.length"><small>
                     <span class="span6">
-                        &nbsp;&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;Date : 
+                        &nbsp;&nbsp;&nbsp;<i class="icon-calendar"></i>&nbsp;Date :
                         <input type="text" class="input-medium" datepicker-popup="yyyy-MM-dd" ng-model="date.start" is-open="isOpenStart"  ng-required="false" ng-click="datePickStart()" placeholder="From Date"/>
                         -
                         <input type="text" class="input-medium" datepicker-popup="yyyy-MM-dd" ng-model="date.end" is-open="isOpenEnd"  ng-required="false" ng-click="datePickEnd()" placeholder="To Date"/>
@@ -104,7 +103,7 @@
                         <h4 ng-bind-html-unsafe="'{{slide.name}}' | highlight:name "></h4>
                     </td>
                     <td class="img">
-                        <img ng-src="./photos/{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{slide}})">
+                        <img  ng-src="./photos/{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{slide}})">
                     </td>
                     <td>
                         <p class="lead" ng-bind-html-unsafe="'{{slide.location}}' | highlight:location "></p>
@@ -162,7 +161,7 @@
                     Photo :  <input type="file" accept="image/*" onchange="angular.element(this).scope().selectFile(this)" />
                     <br><label class="label label-info text-center" ng-show="newSlide.imageAll.length">Selected <br>(Totally {{ newSlide.imageAll.length }} ): {{fileSelected}} </label>
                     <span ng-repeat="img in newSlide.imageAll" ng-show="newSlide.imageAll">
-                         <img ng-src="./photos/{{img}}" width="60" class="img-rounded img-list" alt="{{img}}" title="{{img}}">
+                         <img  ng-src="./photos/{{img}}" width="60" class="img-rounded img-list" alt="{{img}}" title="Click to remove this image from the list" ng-click="cancelImg('{{img}}')">
                     </span> <br>
                 </div>
                 <div class="span5 offset1">
@@ -187,11 +186,11 @@
         <div class="row-fluid">
             <h3><small>
                 <div class="span1 offset1">
-                    Tips : 
+                    Tips :
                 </div>
                 <div class="span9 alert">
                     ①All the data items are mandatory. <br><br>②Please copy all the necessary photo files to photos directory.
-                    <br><br>③Pick one photo each time. <br><br>④Duplicate photo files will not be accepted.<br>
+                    <br><br>③Pick one photo each time. <br><br>④Duplicate photo files will not be accepted.<br><br>⑤Click the image to remove it from the list.
                 </div>
             </small></h3>
         </div>
@@ -211,7 +210,7 @@
         <div class="modal-body">
             <carousel interval="5000">
                 <slide ng-repeat="img in record.imageAll "  active="slide.active">
-                    <img ng-src="./photos/{{img}}"  style="margin:auto;"  class="img-polaroid img-carousel-big">
+                    <img  ng-src="./photos/{{img}}"  style="margin:auto;"  class="img-polaroid img-carousel-big">
                     <div class="carousel-caption" >
                         <h4>{{img}}</h4>
                     </div>
