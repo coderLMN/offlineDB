@@ -128,6 +128,15 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         });
     };
 
+    //encode text input to transform potential malicious html/javascript inputs
+    function encode(text){
+        return text.replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     $scope.addSlide = function() {
         var modalInstance = $modal.open({
             templateUrl: 'newSlide.html',
@@ -152,9 +161,9 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 newDate += '' + day;
             }
             var slide = {
-                "name" :  record.name,
-                "text": record.text,
-                "location": record.location,
+                "name" :  encode(record.name),         //encode text fields to protect DB from malicious input
+                "text": encode(record.text),
+                "location": encode(record.location),
                 "imageAll": record.imageAll,
                 "date": newDate,
                 "price": ''+record.price,
