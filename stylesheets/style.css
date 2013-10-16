@@ -3,7 +3,7 @@
 .img-polaroid{padding:4px;background-color:#ffb366;border:1px solid #ccc;border:1px solid rgba(0, 0, 0, 0.2);-webkit-box-shadow:0 1px 3px rgba(0, 0, 0, 0.1);-moz-box-shadow:0 1px 3px rgba(0, 0, 0, 0.1);box-shadow:0 1px 3px rgba(0, 0, 0, 0.1);}
 .img-circle{-webkit-border-radius:500px;-moz-border-radius:500px;border-radius:500px;}
 .img-carousel{height: 300px;}
-.img-carousel-big{height: 450px;}
+.img-carousel-big{height: 500px;}
 .carousel-caption{opacity: 0.7; }
 .carousel-indicators{
     visibility:hidden;
@@ -39,7 +39,7 @@ body{
 
 td.img
 {
-    max-width: 160px;
+    max-width: 100px;
     text-align: center;
     vertical-align: middle;
 }
@@ -118,22 +118,23 @@ div.modal {
     top:1%;
     margin-left: 0;
     padding-bottom: 0;
-    overflow-y: auto;
 }
 .modal-body {
-    max-height: 70%;
+    height: 75% ;
+    max-height: 100%;
     padding: 1%;
-    overflow-y: hidden;
 }
 .modal-footer {
-    width: 98%;
-    max-height: 20%;
     text-align: center;
     padding: 1%;
 }
 .modal.fade.in {
     top: 0;
 }
+.modal-body.well{
+    margin-bottom: 0;
+}
+
 .alert {
     margin-bottom: 1px;
 }
@@ -175,7 +176,9 @@ h1.title{
 textarea {
     width: 600px;
 }
-
+audio, canvas, video {
+    display: none;
+}
 /*imported from http://www.alessioatzeni.com/blog/css3-loading-animation-loop/*/
 .ball {
     background-color: rgba(0,0,0,0);

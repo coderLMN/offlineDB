@@ -13,7 +13,7 @@ app.service('indexDBService', function() {
     };
 
     this.open = function(fn) {
-        var version = 1;
+        var version = 4;                //to add images object store, the DB need a upgrade
 
         if(window.indexedDB) {
             var request = window.indexedDB.open('LmnDemoApp', version);
@@ -23,10 +23,12 @@ app.service('indexDBService', function() {
                 // A versionchange transaction is started automatically.
                 e.target.transaction.onerror = this.onerror;
 
-                if(db.objectStoreNames.contains('slides')) {
-                    db.deleteObjectStore('slides');
+                if(! db.objectStoreNames.contains('slides')) {
+                    db.createObjectStore('slides', {keyPath: "timeStamp"});
                 }
-                var SlideStore = db.createObjectStore('slides', {keyPath: "timeStamp"});
+                if(! db.objectStoreNames.contains('images')) {
+                    db.createObjectStore('images', {keyPath: "imageFile"});
+                }
             };
 
             request.onsuccess = function(e) {
@@ -37,7 +39,6 @@ app.service('indexDBService', function() {
         else{
             console.log('ERROR: Error occured while accessing indexedDB.')
         }
-
         request.onerror = this.onerror;
     };
 
@@ -74,9 +75,10 @@ app.service('indexDBService', function() {
         };
     };
 
-    this.addRecord = function(record, fn) {
-        var trans = db.transaction('slides', "readwrite");
-        var store = trans.objectStore('slides');
+    //because there is a extra image store now, type parameter is necessary to identify the store wanted
+    this.addRecord = function(type, record, fn) {
+        var trans = db.transaction(type, "readwrite");
+        var store = trans.objectStore(type);
         var request = store.put(record);
 
         request.onsuccess = function(e) {    // activate the callback if record created successfully
@@ -88,4 +90,14 @@ app.service('indexDBService', function() {
         };
     };
 
+    this.getItem = function(type, keyPath, fn) {    //get one record according to the keyPath parameter
+        var trans = db.transaction(type, "readonly");
+        var store = trans.objectStore(type);
+        var request = store.get(keyPath);
+
+        request.onsuccess = function(e) {
+            fn(e.target.result);
+        };
+        request.onerror = this.onerror;
+    };
 });

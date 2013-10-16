@@ -10,6 +10,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
     $scope.date = {};
     $scope.cost = {};
     $scope.maxSize = 5;
+    $scope.imgBuf = {};
 
     $scope.setDefaultFilter = function() {
         $scope.cost.startPrice = 0;         //endPrice will be set in init()
@@ -18,19 +19,24 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         $scope.date.end = new Date();
         $scope.currentPage =  1;            //set default page as the first page
     };
-
     $scope.init = function() {
         window.scrollTo(0,0);
         $scope.flags.title="Loading slides......";
         $scope.flags.isViewLoading = true;
         $scope.slides = [];
         $scope.flags.sorted ={};            //clear sort flags
+        $scope.imgBuf = {};
         $scope.setDefaultFilter();
         $scope.message.type = "";
 
         indexDBService.open(function(){
             indexDBService.getAllItems(function(row){
                 $scope.slides.push(row);                       //get all the slides and put them in DOM
+                if(! $scope.imgBuf[row.imageAll[0]]){          //load small image which is stored in IndexedDB
+                    indexDBService.getItem('images', row.imageAll[0], function(item){
+                        $scope.imgBuf[row.imageAll[0]] = item.imgBuf;        //enable image display in web page
+                    });
+                }
                 if(parseInt(row.price) > $scope.cost.endPrice ){
                     $scope.cost.endPrice  = parseInt(row.price);
                 }                                             //set max value of search item: end price
@@ -119,13 +125,13 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         }
     };
 
-    $scope.openSlide = function (slide) {
+    $scope.openSlide = function (index) {
         var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
             templateUrl: 'showSlide.html',
             controller: "ShowSlideModalCtrl",
             resolve: {
                 slide: function() {
-                    return slide;
+                    return $scope.slides[index];
                 }
             }
         });
@@ -140,7 +146,11 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
             .replace(/>/g, '&gt;');
     }
     //Now this method handles not only editing and saving new slide, but also modifying existing slide
-    $scope.addSlide = function(slide) {
+    $scope.addSlide = function(index) {
+        var slide = null;
+        if(index >= 0){
+            slide = $scope.slides[index];
+        }
         var modalInstance = $modal.open({
             templateUrl: 'newSlide.html',
             controller: "NewSlideModalCtrl",
@@ -183,11 +193,12 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 "text": encode(record.text),
                 "location": encode(record.location),
                 "imageAll": record.imageAll,
+//                "imgBuf": record.imgBuf,
                 "date": newDate,
                 "price": ''+record.price,
                 "timeStamp" : timeStamp
             };                                              //create a slide object
-            indexDBService.addRecord(slide, function(){     //save the slide
+            indexDBService.addRecord('slides', slide, function(){     //save the slide
                 $scope.init();
                 $scope.$apply();
             });
@@ -196,7 +207,8 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         });
     };
 
-    $scope.removeSlide = function(slide) {
+    $scope.removeSlide = function(index) {
+        slide = $scope.slides[index];
         var res = confirm("Do you mean to remove this slide?");
         if (res == true)
         {
@@ -232,12 +244,19 @@ app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide) {
 });
 
 // open a modal box to add a new slide record
-app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide) {
+app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide, indexDBService, imageResizeService) {
     var imageStr = '\n';           // use \n instead of blank to split image files to contain file names with blanks inside
+    $scope.imgBuf = {};
     if(slide){
         $scope.newSlide = slide;
         $scope.newSlide.price = parseInt(slide.price);
         imageStr = '\n' + slide.imageAll.join('\n') + '\n';
+        slide.imageAll.forEach(function(img) {
+            indexDBService.getItem('images', img, function(item){
+                $scope.imgBuf[img] = item.imgBuf;        //enable image display in web page
+                $scope.$apply();                 //apply change to reflect instantly the images selected
+            });
+        });
     }
     else{
         $scope.newSlide = {};
@@ -251,24 +270,46 @@ app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide) {
     };
 
     $scope.selectFile = function(element) {    //select image files within the photos directory
-        var filename = element.files[0].name;
-        if(0 <= imageStr.indexOf('\n' + filename +'\n')) {  //check if image file already selected
+        var file = element.files[0];
+        if(0 <= imageStr.indexOf('\n' + file.name +'\n')) {  //check if image file already selected
             $scope.duplicateImg = true;
         }
         else{
-            imageStr += filename + '\n'; // newSlide.image is only for duplication check purpose
+            var timeStamp = file.lastModifiedDate.getTime();
+            indexDBService.getItem('images', file.name, function(item){
+                if(!item || item.timeStamp != timeStamp){      //file not re-sized or modified after re-size
+                    $scope.addImgBuf = true;
+                    imageResizeService.resize(file, function(canvas){
+                        var imgSelected = {imageFile: file.name, imgBuf: canvas.toDataURL(file.type), timeStamp: timeStamp};
+                        indexDBService.addRecord('images', imgSelected, function(){     //save the image
+                            $scope.imgBuf[file.name] = imgSelected.imgBuf;
+                            $scope.$apply();                 //apply change to reflect instantly the images selected
+                        });
+                    });
+                }
+                else{
+                    indexDBService.getItem('images', file.name, function(item){
+                        $scope.imgBuf[file.name] = item.imgBuf;        //enable image display in web page
+                        $scope.$apply();                 //apply change to reflect instantly the images selected
+                    });
+                }
+            })
+            imageStr += file.name + '\n'; // newSlide.image is only for duplication check purpose
             $scope.newSlide.imageAll = imageStr.replace(/^\n+|\n+$/g, '').split('\n');   // this is the one to persist
         }
-        $scope.$apply();
     };
 
     $scope.clearError = function(){
         $scope.duplicateImg = false;       // hide the duplicate image error note
     };
+    $scope.clearExists = function(){
+        $scope.addImgBuf = false;       // hide the duplicate image error note
+    };
     $scope.cancelImg = function(img){      // remove the img from imageAll list
         var start = imageStr.indexOf('\n' + img + '\n');
         if(start > -1){
             imageStr = imageStr.substring(0,start) + imageStr.substring(start+img.length+1);   //remove img from the string
+//            delete $scope.imgFiles[img];
             if(imageStr.length > 1){
                 $scope.newSlide.imageAll = imageStr.replace(/^\n+|\n+$/g, '').split('\n');
             }
