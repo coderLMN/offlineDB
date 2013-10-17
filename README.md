@@ -4,6 +4,6 @@ Thanks to IndexedDB, we can maintain a offline DB now. No Application Server, no
 
 About <strong>browser compatibility</strong>, all sane browsers support HTML 5 (especially IndexedDB, of course) are fine, but <strong>Chrome</strong> is highly recommended because I only included webkit properties for some CSS animation effects. 
 
-Safari? No, it does NOT support IndexedDB, at this moment.
+Safari? No. It does NOT support IndexedDB, at this moment.
 
 <strong>One tip:</strong> All the photos must be kept in photos/ directory. When you create a new slide, only images under that directory can be selected. It's just a html app, isn't it?
