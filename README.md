@@ -7,3 +7,5 @@ About <strong>browser compatibility</strong>, all sane browsers support HTML 5 (
 Safari? No. It does NOT support IndexedDB, at this moment.
 
 <strong>One tip:</strong> All the photos must be kept in photos/ directory. When you create a new slide, only images under that directory can be selected. It's just a html app, isn't it?
+
+<img src="http://ww2.sinaimg.cn/large/8063ac81jw1e9ixdrwkrbj20ye1ijama.jpg" title="My demo screen">
