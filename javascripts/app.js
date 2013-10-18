@@ -5,7 +5,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
     $scope.flags = {};
     $scope.flags.showRemoveIcon = false;      //remove icons are hidden by default to protect data from being removed by random clicks
     $scope.flags.title = "Offline DB demo";
-    $scope.pageSize = 20;
+    $scope.pageSize = 10;
 
     $scope.date = {};
     $scope.cost = {};
@@ -125,16 +125,18 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         }
     };
 
-    $scope.openSlide = function (index) {
-        var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
-            templateUrl: 'showSlide.html',
-            controller: "ShowSlideModalCtrl",
-            resolve: {
-                slide: function() {
-                    return $scope.slides[index];
+    $scope.openSlide = function (timeStamp) {
+        indexDBService.getItem('slides', timeStamp, function(slide){
+            var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
+                templateUrl: 'showSlide.html',
+                controller: "ShowSlideModalCtrl",
+                resolve: {
+                    slide: function() {
+                        return slide;
+                    }
                 }
-            }
-        });
+            });
+        })
     };
 
     //encode text input to transform potential malicious html/javascript inputs
@@ -146,11 +148,18 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
             .replace(/>/g, '&gt;');
     }
     //Now this method handles not only editing and saving new slide, but also modifying existing slide
-    $scope.addSlide = function(index) {
+    $scope.addSlide = function(timeStamp) {
         var slide = null;
-        if(index >= 0){
-            slide = $scope.slides[index];
+        if(timeStamp >= 0){
+            indexDBService.getItem('slides', timeStamp, function(record){
+                $scope.saveSlide(record);
+            });   //$index is subject to change after user modify sort or search condition, and hence is unstable.
+        }         //to make sure the right record is processed, a timeStamp has to be passed as parameter
+        else{
+            $scope.saveSlide(slide);
         }
+    };
+    $scope.saveSlide = function(slide){
         var modalInstance = $modal.open({
             templateUrl: 'newSlide.html',
             controller: "NewSlideModalCtrl",
@@ -193,7 +202,6 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 "text": encode(record.text),
                 "location": encode(record.location),
                 "imageAll": record.imageAll,
-//                "imgBuf": record.imgBuf,
                 "date": newDate,
                 "price": ''+record.price,
                 "timeStamp" : timeStamp
@@ -205,20 +213,21 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         }, function () {
             console.log('failed to add new slide: ' + record);
         });
-    };
+    }
 
-    $scope.removeSlide = function(index) {
-        slide = $scope.slides[index];
-        var res = confirm("Do you mean to remove this slide?");
-        if (res == true)
-        {
-            indexDBService.deleteRecord(slide.timeStamp, function(){
-                $scope.init();
-                $scope.message.text = "Record removed: " +  slide.location+'  |  ' + slide.name+'  |  ' +slide.imageAll.join(' ') + ' | ' +slide.date+'  |  RMB ' +slide.price+' | ' +slide.text;
-                $scope.message.type = "alert-danger";
-                $scope.$apply();
-            });
-        }
+    $scope.removeSlide = function(timeStamp) {
+        indexDBService.getItem('slides', timeStamp, function(slide){
+            var res = confirm("Do you mean to remove this slide? " + slide.name);
+            if (res == true)
+            {
+                indexDBService.deleteRecord(slide.timeStamp, function(){
+                    $scope.init();
+                    $scope.message.text = "Record removed: " +  slide.location+'  |  ' + slide.name+'  |  ' +slide.imageAll.join(' ') + ' | ' +slide.date+'  |  RMB ' +slide.price+' | ' +slide.text;
+                    $scope.message.type = "alert-danger";
+                    $scope.$apply();
+                });
+            }
+        });
     };
 
     $scope.$watch('numPages', function () {           //catch any change to total pages available
@@ -243,7 +252,7 @@ app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide) {
     };
 });
 
-// open a modal box to add a new slide record
+// open a modal box to add a new slide record or modify an existing record
 app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide, indexDBService, imageResizeService) {
     var imageStr = '\n';           // use \n instead of blank to split image files to contain file names with blanks inside
     $scope.imgBuf = {};
@@ -271,6 +280,7 @@ app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide, inde
 
     $scope.selectFile = function(element) {    //select image files within the photos directory
         var file = element.files[0];
+        console.log(file);
         if(0 <= imageStr.indexOf('\n' + file.name +'\n')) {  //check if image file already selected
             $scope.duplicateImg = true;
         }
@@ -309,7 +319,6 @@ app.controller('NewSlideModalCtrl', function($scope, $modalInstance, slide, inde
         var start = imageStr.indexOf('\n' + img + '\n');
         if(start > -1){
             imageStr = imageStr.substring(0,start) + imageStr.substring(start+img.length+1);   //remove img from the string
-//            delete $scope.imgFiles[img];
             if(imageStr.length > 1){
                 $scope.newSlide.imageAll = imageStr.replace(/^\n+|\n+$/g, '').split('\n');
             }

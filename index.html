@@ -44,7 +44,7 @@
         <div class=" well">
             <carousel interval="5000">
                 <slide ng-repeat="slide in slides "  active="slide.active">
-                    <img  ng-src="{{imgBuf[slide.imageAll[0]]}}"  alt="{{slide.imageAll[0]}}"  style="margin:auto;" class="img-polaroid img-carousel" ng-click="openSlide({{$index}})">
+                    <img  ng-src="{{imgBuf[slide.imageAll[0]]}}"  alt="{{slide.imageAll[0]}}"  style="margin:auto;" class="img-polaroid img-carousel" ng-click="openSlide({{slide.timeStamp}})">
                     <div class="carousel-caption" >
                         <h4>{{slide.name}} :</h4>
                         <p class="lead"> &nbsp;&nbsp;{{slide.text.substring(0,120)}}
@@ -97,15 +97,15 @@
                 </thead>
                 <tbody>
                 <!--a chain of filters are deployed here to enable a combined search-->
-                <tr ng-repeat="slide in filtered = ( slides | filter: {text: term, name: name, location:location} | period: this.date | cost: this.cost )| startFrom:(currentPage-1)*20 | limitTo:20 "
+                <tr ng-repeat="slide in filtered = ( slides | filter: {text: term, name: name, location:location} | period: this.date | cost: this.cost )| startFrom:(currentPage-1)*pageSize | limitTo:pageSize"
                     ng-animate="'animate'"
                     ng-class-odd="''" ng-class-even="''">
-                    <td ng-dblclick="addSlide({{$index}})" class="pointer" title="Double Click to edit the record.">
+                    <td ng-dblclick="addSlide({{slide.timeStamp}})" class="pointer" title="Double Click to edit the record.">
                         <!--highlight all the text matches the value of input: name-->
                         <h4 ng-bind-html-unsafe="'{{slide.name}}' | highlight:name "></h4>
                     </td>
                     <td class="img pointer">
-                        <img  ng-src="{{imgBuf[slide.imageAll[0]]}}" alt="{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{$index}})">
+                        <img  ng-src="{{imgBuf[slide.imageAll[0]]}}" alt="{{slide.imageAll[0]}}" width="160" class="img-rounded img-list" ng-click="openSlide({{slide.timeStamp}})">
                     </td>
                     <td>
                         <p class="lead" ng-bind-html-unsafe="'{{slide.location}}' | highlight:location "></p>
@@ -127,7 +127,7 @@
                     <td>
                         <!--remove icons are hidden by default-->
                         <p class="lead pointer pull-right">
-                            <i class="icon-trash  pointer" ng-show="flags.showRemoveIcon" ng-click="removeSlide({{$index}})"></i>
+                            <i class="icon-trash  pointer" ng-show="flags.showRemoveIcon" ng-click="removeSlide({{slide.timeStamp}})"></i>
                         </p>
                     </td>
                 </tr>

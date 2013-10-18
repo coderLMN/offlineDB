@@ -59,14 +59,24 @@ app.filter('cost', function() {
 // https://github.com/angular-ui/ui-utils/blob/gh-pages/build/ui-utils.js
 app.filter('highlight', function () {
     return function (text, search) {
+        var result = text;
         if (search) {
-            text = text.toString();
-            search = search.toString();
             // replace matched part with the same text styled by ui-match class
-            return text.replace(new RegExp(search, 'gi'), '<span class="ui-match">$&</span>');
-        } else {
-            return text;
+            if(text.length <= 120){
+                result = text.replace(new RegExp(search, 'gi'), '<span class="ui-match">$&</span>');
+            }
+            else {          // if the content is longer than 120 characters, need to put some dots to indicate something omitted
+                // if the omitted part also contains the key words to search, put one between the dots
+                result = text.substring(0,120).replace(new RegExp(search, 'gi'), '<span class="ui-match">$&</span>') + '...';
+                if(text.lastIndexOf(search) > 120) {
+                    result += '<span class="ui-match">'+ search +'</span>' + '...';  //all the key words are shown, add some dots is fine
+                }
+            }
         }
+        else if(text.length > 120){
+            result = text.substring(0,120) + '...'    //there is no key words to search for, just add some dots when it is too long
+        }
+        return result;
     };
 });
 
