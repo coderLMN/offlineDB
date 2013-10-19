@@ -132,9 +132,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         var found = false;
         var i = 0;
         var result = null;
-        console.log(timeStamp);
         while(!found && i<total){
-            console.log($scope.slides[i]);
             if($scope.slides[i].timeStamp != timeStamp){
                 i++;
             }
@@ -143,7 +141,6 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 found = true;
             }
         }
-        console.log(result);
         return result;
     }
 
