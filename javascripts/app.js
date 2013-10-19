@@ -125,18 +125,38 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
         }
     };
 
+    //$index is subject to change after user modify sort or search condition, and hence is unstable.
+    //to make sure the right record is processed, a timeStamp has to be passed as parameter
+    function getItemByTimeStamp(timeStamp){        //get the slide whose timeStamp matches the parameter
+        var total = $scope.slides.length;
+        var found = false;
+        var i = 0;
+        var result = null;
+        console.log(timeStamp);
+        while(!found && i<total){
+            console.log($scope.slides[i]);
+            if($scope.slides[i].timeStamp != timeStamp){
+                i++;
+            }
+            else{
+                result = $scope.slides[i];
+                found = true;
+            }
+        }
+        console.log(result);
+        return result;
+    }
+
     $scope.openSlide = function (timeStamp) {
-        indexDBService.getItem('slides', timeStamp, function(slide){
-            var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
-                templateUrl: 'showSlide.html',
-                controller: "ShowSlideModalCtrl",
-                resolve: {
-                    slide: function() {
-                        return slide;
-                    }
+        var modalInstance = $modal.open({       //pass the slide to  ShowSlideModalCtrl
+            templateUrl: 'showSlide.html',
+            controller: "ShowSlideModalCtrl",
+            resolve: {
+                slide: function() {
+                    return getItemByTimeStamp(timeStamp);
                 }
-            });
-        })
+            }
+        });
     };
 
     //encode text input to transform potential malicious html/javascript inputs
@@ -149,23 +169,12 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
     }
     //Now this method handles not only editing and saving new slide, but also modifying existing slide
     $scope.addSlide = function(timeStamp) {
-        var slide = null;
-        if(timeStamp >= 0){
-            indexDBService.getItem('slides', timeStamp, function(record){
-                $scope.saveSlide(record);
-            });   //$index is subject to change after user modify sort or search condition, and hence is unstable.
-        }         //to make sure the right record is processed, a timeStamp has to be passed as parameter
-        else{
-            $scope.saveSlide(slide);
-        }
-    };
-    $scope.saveSlide = function(slide){
         var modalInstance = $modal.open({
             templateUrl: 'newSlide.html',
             controller: "NewSlideModalCtrl",
             resolve: {
                 slide: function () {
-                    return slide;
+                    return getItemByTimeStamp(timeStamp);
                 }
             }
         });
@@ -216,18 +225,16 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
     }
 
     $scope.removeSlide = function(timeStamp) {
-        indexDBService.getItem('slides', timeStamp, function(slide){
-            var res = confirm("Do you mean to remove this slide? " + slide.name);
-            if (res == true)
-            {
-                indexDBService.deleteRecord(slide.timeStamp, function(){
-                    $scope.init();
-                    $scope.message.text = "Record removed: " +  slide.location+'  |  ' + slide.name+'  |  ' +slide.imageAll.join(' ') + ' | ' +slide.date+'  |  RMB ' +slide.price+' | ' +slide.text;
-                    $scope.message.type = "alert-danger";
-                    $scope.$apply();
-                });
-            }
-        });
+        var slide = getItemByTimeStamp(timeStamp);
+        var res = confirm("Do you mean to remove this slide? " + slide.name);
+        if (res == true) {
+            indexDBService.deleteRecord(slide.timeStamp, function(){
+                $scope.init();
+                $scope.message.text = "Record removed: " +  slide.location+'  |  ' + slide.name+'  |  ' +slide.imageAll.join(' ') + ' | ' +slide.date+'  |  RMB ' +slide.price+' | ' +slide.text;
+                $scope.message.type = "alert-danger";
+                $scope.$apply();
+            });
+        }
     };
 
     $scope.$watch('numPages', function () {           //catch any change to total pages available
