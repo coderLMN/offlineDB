@@ -136,7 +136,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
             if($scope.slides[i].timeStamp != timeStamp){
                 i++;
             }
-            else{
+            else{                            //get the matched slide and return it to the caller
                 result = $scope.slides[i];
                 found = true;
             }
