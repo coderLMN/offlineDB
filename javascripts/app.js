@@ -217,7 +217,7 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
                 $scope.$apply();
             });
         }, function () {
-            console.log('failed to add new slide: ' + record);
+            console.log('failed to add new slide: ' );
         });
     }
 
@@ -249,7 +249,14 @@ app.controller('AppCtrl', function($scope, $modal, $timeout, indexDBService) {
 });
 
 // open a modal box to show a specific slide
-app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide) {
+app.controller('ShowSlideModalCtrl', function($scope, $modalInstance, slide, indexDBService) {
+    $scope.imgBuf = {};
+    slide.imageAll.forEach(function(img) {
+        indexDBService.getItem('images', img, function(item){
+            $scope.imgBuf[img] = item.imgBuf;        //enable image display in web page
+            $scope.$apply();                 //apply change to reflect instantly the images selected
+        });
+    });
     $scope.record = slide;
     $scope.exit = function() {              // only one close icon in show modal box
         $modalInstance.dismiss('cancel');
