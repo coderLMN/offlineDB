@@ -162,7 +162,7 @@
                     Date :  <input type="text" ng-model="newSlide.date" datepicker-popup="yyyy-MM-dd" is-open="newDateOpen"  ng-required="true" ng-click="newDatePick()" placeholder="Date"/><br>
                     Name :  <input type="text" ng-model="newSlide.name" placeholder="Name" ng-required="true"/>  <br>
                     Photo :  <input type="file" accept="image/*" onchange="angular.element(this).scope().selectFile(this)" />
-                    (Total: {{ newSlide.imageAll.length }} )
+                    <br>(Total: {{ newSlide.imageAll.length }} )
                 </div>
                 <div class="span5 offset1">
                     Price( $ ):  <input type="number" ng-model="newSlide.price" placeholder="Price ( $ )" ng-required="true"/><br>
