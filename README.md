@@ -1,6 +1,6 @@
 This is a single page application based on AngularJS framework and HTML5 IndexedDB. It manages a simple local database, to which users can add, remove, update, search and list records.
 
-Here is a <a href="http://coderlmn.github.io/offlineDB/">demo page</a>.
+Here is a <a href="https://coderlmn.github.io/offlineDB/">demo page</a>.
 
 Thanks to IndexedDB, we can maintain a offline DB now. No Application Server, no DB server, all we need to run this DB is just a browser. 
 
